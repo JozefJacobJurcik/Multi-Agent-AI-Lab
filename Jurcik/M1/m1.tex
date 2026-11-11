@@ -15,9 +15,7 @@
 \usepackage{tikz}
 \usetikzlibrary{fit,positioning}
 \usepackage[british]{babel}
-% Double quotation marks throughout, as IEEE uses them for titles.
 \usepackage[style=american]{csquotes}
-% References in IEEE style, from the vault's generated file and the course documents.
 \usepackage[style=ieee,backend=biber]{biblatex}
 % The reference list follows IEEE punctuation and dates ("A, B, and C", "Nov. 9, 2026").
 \DeclareLanguageMapping{british}{american}
@@ -40,7 +38,7 @@
 
 % The hints, and the example rows of the table, in grey italic.
 \newif\ifhints
-\hintsfalse   % hints are hidden for handing in
+\hintsfalse   % hints are hidden
 \usepackage{comment}
 \ifhints
   \newenvironment{hint}{\par\color{gray}\itshape\setlist{nosep,leftmargin=1.5em}}{\par}
@@ -51,8 +49,6 @@
 \fi
 
 % ---------------------------------------------------------------------------
-% TO FILL IN BEFORE HANDING IN. Everything printed in red comes from here.
-% Replace each \TODO{...} by plain text. When nothing red is left in the PDF, you are done.
 \newcommand\TODO[1]{\textcolor{red}{#1}}
 \newcommand\myname{Jozef Jurcik}
 \newcommand\myteam{A Team}
