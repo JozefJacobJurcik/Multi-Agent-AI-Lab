@@ -1,0 +1,228 @@
+% M1: one document per student. A filled copy of template-m1.tex.
+% Build: latexmk -pdf m1.tex   (pdflatex + biber)
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+% TeX Gyre Heros, a Helvetica clone with the same letter widths as Arial in the Word template.
+\usepackage{tgheros}
+\renewcommand\familydefault{\sfdefault}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{graphicx}
+% The Ensemble diagram in section 2.2.
+\usepackage{tikz}
+\usetikzlibrary{fit,positioning}
+\usepackage[british]{babel}
+% Double quotation marks throughout, as IEEE uses them for titles.
+\usepackage[style=american]{csquotes}
+% References in IEEE style, from the vault's generated file and the course documents.
+\usepackage[style=ieee,backend=biber]{biblatex}
+% The reference list follows IEEE punctuation and dates ("A, B, and C", "Nov. 9, 2026").
+\DeclareLanguageMapping{british}{american}
+% One locator per reference: the DOI, else the arXiv number, else the URL. No ISBNs.
+\DeclareSourcemap{\maps[datatype=bibtex]{
+  \map{\step[fieldsource=doi,final]\step[fieldset=url,null]\step[fieldset=eprint,null]}
+  \map{\step[fieldsource=eprint,final]\step[fieldset=url,null]}
+  \map{\step[fieldset=isbn,null]}
+}}
+\addbibresource{references.bib}
+\addbibresource{course.bib}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={M1: Literature survey, agent design and project plan}}
+\setlength\parindent{0pt}
+\setlength\parskip{0.5em}
+% Less white space around the one figure and its caption.
+\setlength\intextsep{6pt}
+\setlength\abovecaptionskip{4pt}
+\setlength\belowcaptionskip{0pt}
+
+% The hints, and the example rows of the table, in grey italic.
+\newif\ifhints
+\hintsfalse   % hints are hidden for handing in
+\usepackage{comment}
+\ifhints
+  \newenvironment{hint}{\par\color{gray}\itshape\setlist{nosep,leftmargin=1.5em}}{\par}
+  \newcommand\examplerow[3]{{\color{gray}\itshape #1} & {\color{gray}\itshape #2} & {\color{gray}\itshape #3} \\}
+\else
+  \excludecomment{hint}
+  \newcommand\examplerow[3]{}
+\fi
+
+% ---------------------------------------------------------------------------
+% TO FILL IN BEFORE HANDING IN. Everything printed in red comes from here.
+% Replace each \TODO{...} by plain text. When nothing red is left in the PDF, you are done.
+\newcommand\TODO[1]{\textcolor{red}{#1}}
+\newcommand\myname{Jozef Jurcik}
+\newcommand\myteam{A Team}
+\newcommand\Imp{Jurcik}     % Improviser
+\newcommand\Mus{Merkl}   % Musicologist
+\newcommand\Pla{Mukherjee}         % Player
+% ---------------------------------------------------------------------------
+
+\newcommand\code[1]{\texttt{#1}}
+% A clickable reference to a section, printed as §1, §2.1, ...
+\newcommand\secref[1]{\hyperref[#1]{\S\ref*{#1}}}
+
+\begin{document}
+
+{\Large\bfseries M1 — Literature survey, agent design and project plan}\par\medskip
+\textbf{Name:} \myname \quad \textbf{Team:} \myteam \quad \textbf{Specialisation:} Improviser
+(Navigation)\par\medskip
+
+\section{Literature survey}\label{sec:survey}
+
+The Night Round combines two classical problems: exploring a graph that is revealed only as it is walked, and
+collecting items with a vehicle of limited capacity. Places not yet seen cannot be planned through, so
+planning and acting have to alternate \parencite{koenig2001agent}.
+
+\textbf{Exploring an unknown graph.} In online graph exploration, every vertex of a weighted graph must be visited, and the edges of a vertex are revealed on arrival \parencite{eberle2022robustification}. Two simple
+rules have known guarantees. The nearest-neighbour rule always walks to the closest unvisited vertex, and its
+tour was shown to be at most $O(\log n)$ times as long as the best one \parencite{rosenkrantz1977analysis}.
+Depth-first search was shown to walk at most twice the number of vertices when all edges are equally long
+\parencite{koenig2003performance}. In simulations, walking to the closest border of the known space (the
+frontier) did not fall behind more elaborate strategies \parencite{holz2010evaluating}. Both guarantees assume that the neighbours of a vertex are seen on arrival. In the Night Round, an untried
+exit shows only its length, not where it leads.
+
+\textbf{Carrying volumes home.} The volumes add a second constraint, as the trolley has to return to the reading hall whenever it is full. Exploring with regular returns to the start was studied as piecemeal exploration \parencite{betke1995piecemeal}. There the limit is on the distance of each trip, and depth-first search with such returns was shown to fail under it. The trolley is limited in load instead, so in the Night Round a return only costs the walk back. Once the map is known, the task is capacitated routing: trips from a depot with a load limit and as little total distance as possible \parencite{haimovich1985bounds}. A simple method for it is the savings heuristic \parencite{clarke1964scheduling}. The combination is known in robotics as foraging, in which robots search for objects and carry them to a collection point \parencite{winfield2009foraging}. No source in this survey treats it for a single agent that keeps a map and is scored on distance.
+
+\textbf{Language models.} Used alone, language models were found to plan poorly. GPT-4 solved about 12\% of planning tasks on average \parencite{valmeekam2023planning} and performed poorly at mapping
+and navigation in text-game mazes \parencite{ding2024mango}. Other work keeps a classical method in
+control: the model proposes and an external verifier checks \parencite{kambhampati2024position}, or the model
+only guides which frontier a planner tries next \parencite{shah2023navigation}. As the Night Round also scores
+tokens, the design in
+\secref{sec:agent} was built on the nearest-neighbour rule, capacitated routing and the model as a checked
+fallback. A plain-prompt baseline, in which the course model plays alone \parencite{course-s4}, will show whether
+it is as weak.
+
+\section{Agent design}
+
+\subsection{My agent}\label{sec:agent}
+
+\textbf{The problem.} The first message gives the number of volumes (\code{total}), the capacity of the trolley and the exits of the hall with their lengths. On arrival, a place shows its id, kind (room or junction), volumes, exits with their lengths and the exit that leads back \parencite{course-s4}. The agent is never shown where an untried exit leads or where the volumes are. The environment is thus partially observable \parencite{russell2021artificial,course-s1}. Within a run it is deterministic and static, so a stored map stays valid. The score counts volumes delivered, distance walked and tokens used, but not steps \parencite{course-api}, so loading costs nothing. As \code{total} is known, exploring can stop once all volumes have been seen.
+
+\textbf{Approach.} The agent is deliberative \parencite{course-s1}: it keeps a map and plans on it in code, with shortest
+paths from NetworkX \parencite{hagberg2008exploring}. Until all volumes are seen, the first of rules 1 to 3 that
+applies is used.
+\begin{enumerate}[nosep,leftmargin=1.6em]
+  \item In a room, as many volumes as fit are taken.
+  \item A full trolley, or one holding all remaining volumes, takes the shortest known path to the hall.
+  \item Otherwise the cheapest untried exit is walked. The cost is the known distance to the exit plus its
+        length (the \emph{nearest-exit rule}).
+  \item Once all volumes have been seen, the remaining trips are planned as capacitated routing, in which
+        a room may be emptied over several trips \parencite{course-api}. All trip plans are tried when few
+        rooms remain, the savings heuristic is used otherwise, and the plan decides every take.
+\end{enumerate}
+
+Depth-first search was the alternative considered. As destinations are hidden, neither rule keeps its
+guarantee from \secref{sec:survey}: the nearest-exit rule may walk a long corridor only to arrive at a known
+place, and depth-first search has to try every exit. The nearest-exit rule was chosen for two reasons. First,
+the closest-frontier strategy held up in the simulations of \secref{sec:survey}. Second, after each unloading,
+depth-first search walks back to the place it discovered last, whereas the nearest-exit rule takes the
+cheapest exit, which is never farther away.
+
+Volumes are loaded while exploring, because this saves a second walk to the room. The price is that a take
+cannot be undone \parencite{course-api}, so a trolley filled early may force an extra trip, which will be
+logged. A language model as the driver was ruled out by the findings of \secref{sec:survey} and by its token
+cost. It is kept only as a fallback for when the arena refuses the actions of the agent, and its proposal is
+sent only if the code confirms it \parencite{kambhampati2024position}.
+
+\textbf{Evaluation.} A depth-first walker without a routing phase will be built first, as the simplest version and the alternative. The plain-prompt baseline \parencite{course-s4}, which gives the model the rules and the messages so far, will be run over several seeds, reported as mean and standard deviation \parencite{hochlehnert2025sober}. All variants will be run on the same practice instances, some kept out of tuning. The design counts as working if every volume is delivered on every practice instance and the mean distance on the instances kept out of tuning is below that of the depth-first walker. If depth-first search walks less, it will be kept instead. The log will split the distance into exploring and carrying. If the agent falls short, the larger share is addressed first: rule~3 for exploring, rule~2 for carrying.
+
+\textbf{Where it meets the team.} In the Overture, the Improviser is a service that the Conductor calls with a
+goal, such as fetching certain volumes or exploring towards a sign, and that returns the next action. Its map
+is kept in the shared store (\secref{sec:ensemble}). It needs to know which volumes are worth a place on the
+trolley (Musicologist) and which doors are open (Player). In return it reports the distance of a trip, to be
+weighed against the worth of the volumes.
+
+\subsection{The Ensemble}\label{sec:ensemble}
+
+\textbf{Dependencies.} The parts depend on each other in the four ways named by
+\textcite{malone1994interdisciplinary}. There are two \emph{shared resources}: the places on the trolley and
+the one connection to the arena. As \emph{producer and consumer}, the Improviser delivers the volumes that the
+Musicologist can read only in the hall, and a door opened by the Player gives the Improviser a shortcut.
+\emph{Simultaneity} is needed at a door, where a puzzle can be answered only while the trolley stands there
+\parencite{course-api}. Each question is a \emph{task with subtasks}: choosing rooms, fetching, reading and
+answering.
+
+\begin{figure}[!ht]\centering
+\begin{tikzpicture}[font=\footnotesize, >=stealth,
+  box/.style={draw, minimum height=5mm, inner sep=2.5pt, align=center},
+  lab/.style={font=\scriptsize, inner sep=1.5pt, align=center}]
+  % Outside the container, on the left: the arena (the game) and the model endpoint (the language model).
+  % They are two servers: model calls never pass through the arena.
+  \node[box, minimum width=14mm, anchor=east] (arena) at (0.35,0.55) {Arena};
+  \node[box, minimum width=14mm, anchor=east] (llm) at (0.35,-0.55) {Model endpoint};
+  % Inside: the Conductor above, the wrapper and the three specialists below, the store on the right.
+  \node[box, minimum width=87mm] (con) at (6.1,0.55) {\textbf{Conductor}: loop, routing rule, checks, log};
+  \node[box, minimum width=22mm] (wrap) at (2.85,-0.55) {Model wrapper};
+  \node[box, minimum width=17mm] (imp) at (5.85,-0.55) {Improviser};
+  \node[box, minimum width=20mm] (mus) at (7.85,-0.55) {Musicologist};
+  \node[box, minimum width=14mm] (pla) at (9.7,-0.55) {Player};
+  \node[draw, densely dotted, fit=(imp)(mus)(pla), inner sep=2pt] (specs) {};
+  \node[box, minimum width=20mm, minimum height=16mm] (store) at (12.45,0) {Shared\\store};
+  \node[lab] at (4.2,0) {decision $\downarrow$ proposal $\uparrow$};
+  \node[draw, dashed, fit=(con)(wrap)(specs)(store), inner sep=3pt] (box) {};
+  \draw[<->] (arena) -- node[lab, below=1pt, pos=0.4] {one\\connection} (con);
+  \foreach \n in {imp,mus,pla} \draw[<->] (\n.north) -- (\n.north |- con.south);
+  % Every specialist may call the wrapper, and only the wrapper calls the model.
+  \draw[->] (specs.west) -- node[lab, below] {call} (wrap.east);
+  \draw[->] (wrap) -- (llm);
+  % The Conductor and every specialist read and write the store.
+  \draw[<->] (con.east) -- (con.east -| store.west);
+  \draw[<->] (specs.east) -- (specs.east -| store.west);
+\end{tikzpicture}
+\caption{The container (dashed) with its three specialists (dotted). The Conductor and the specialists use
+the shared store. Only the specialists call the model, through the wrapper.}\label{fig:ensemble}
+\end{figure}
+
+\textbf{Coordination.} The Ensemble is organised as a hierarchy \parencite{course-s2}. At the top is the Conductor, written in plain code. It holds the connection, runs the loop, checks every action and
+hands each decision to one specialist (Fig.~\ref{fig:ensemble}). It also keeps the shared store: the setlist texts, sent only once, the map, the texts read and the costs. In a base quest, the first message names the quest and so the specialist. In the Overture the order of work is open, so a fixed rule settles where the trolley
+goes next: the Musicologist rates each candidate sign or volume, the Improviser gives its distance, and the
+Conductor takes the candidate with the most worth per distance.
+
+The alternative considered was a blackboard \parencite{erman1980hearsay}, on which a control component selects which part writes next \parencite{course-s2}. Its authors noted that such control \enquote{takes time and requires many fairly sophisticated mechanisms} and is justified where no explicit algorithm exists \parencite{erman1980hearsay}. Here a simple rule chooses the next step without using tokens, so only the shared store was taken over.
+
+\textbf{When a part fails, is slow or is wrong.} If a specialist fails, the Conductor falls back on a default without tokens: the nearest exit or a skip. A slow model call is stopped before the endpoint's 300-second cut-off \parencite{course-s4} and retried once, so a turn stays below the ten minutes of silence that end a run \parencite{course-api}. Against wrong answers, every proposal is first checked in code, as language models were found no better at verifying solutions than at producing them \parencite{kambhampati2024position}. A failed proposal is returned once with the reason. If it fails again, the last well-formed one is sent, as a wrong answer costs no more than a skip \parencite{course-api}, except on claims, which a team of three does not get.
+
+\textbf{Logging.} The starter code logs every arena message and model call \parencite{course-s4}. For each action, the log will add the deciding part, its reason, its tokens, the change in \code{spent} and the check result.
+
+\section{Project plan}
+
+\subsection{The team's plan}
+
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.14\linewidth}>{\raggedright\arraybackslash}p{0.62\linewidth}>{\raggedright\arraybackslash}p{0.18\linewidth}@{}}
+\hline
+\textbf{By} & \textbf{What will be working} & \textbf{Who} \\
+\hline
+16 Nov & Self-test passes, and fails when the prompt is broken & \Mus \\
+20 Nov & Conductor shares: loop and routing (\Imp), shared store (\Mus), logging and failure rules (\Pla) & one each \\
+23 Nov & Each base quest plays a practice run via the Conductor & each owner \\
+27 Nov & \textbf{First Overture run with all parts in one container} & \Imp \\
+30 Nov week & Rehearsal: image connects to course arena and endpoint & \Imp \\
+4 Dec & Overture end to end with failure rules, baselines measured & \Pla \\
+8 Dec & Image frozen, all dependencies inside, reflections drafted & \Pla \\
+10 Dec & M2 handed in & each \\
+\hline
+\end{tabular}
+
+Each member owns one Conductor share. Open rows are checked weekly and work is moved.
+
+\subsection{My plan}
+
+16 Nov: parser, map store and depth-first baseline. 20 Nov: the Conductor share. 23 Nov: nearest-exit rule,
+plain-prompt baseline and measurement script. 27 Nov: service interface for the Overture. 1 Dec: routing
+phase. 4 Dec: model fallback and comparison of the variants. Two steps are most likely to slip.
+The Conductor share blocks both teammates and will therefore be done before the nearest-exit rule. If the
+hand-over to the Overture slips, the minimal \enquote{next action} call will be kept and exploring by signs
+will be moved to after M2.
+
+\section*{References}
+
+{\sloppy\printbibliography[heading=none]}
+
+\subsection*{Use of AI}
+TODO
+
+\end{document}
