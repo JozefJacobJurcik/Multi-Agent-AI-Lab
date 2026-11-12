@@ -1,0 +1,274 @@
+% M1: one document per student. A filled copy of template-m1.tex.
+% Build: latexmk -pdf m1.tex   (pdflatex + biber)
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+% TeX Gyre Heros, a Helvetica clone with the same letter widths as Arial in the Word template.
+\usepackage{tgheros}
+\renewcommand\familydefault{\sfdefault}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{graphicx}
+% The Ensemble diagram in section 2.2.
+\usepackage{tikz}
+\usetikzlibrary{fit,positioning}
+% Styles for Figures 1 and 2 (section 2.1). The Ensemble figure sets its own box and lab styles.
+\tikzset{
+  rdfig/.style={font=\footnotesize, >=stealth},
+  box/.style={draw, minimum height=5mm, inner sep=2.5pt, align=center},
+  lm/.style={box, fill=black!12},
+  lab/.style={font=\scriptsize, inner sep=1.5pt, align=center},
+}
+\usepackage[british]{babel}
+\usepackage[style=american]{csquotes}
+\usepackage[style=ieee,backend=bibtex]{biblatex}
+% The reference list follows IEEE punctuation and dates ("A, B, and C", "Nov. 9, 2026").
+\DeclareLanguageMapping{british}{american}
+\addbibresource{references.bib}
+\addbibresource{course.bib}
+\addbibresource{merkl.bib}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{pdftitle={M1: Literature survey, agent design and project plan}}
+\setlength\parindent{0pt}
+\setlength\parskip{0.5em}
+% Less white space around the one figure and its caption.
+\setlength\intextsep{6pt}
+\setlength\abovecaptionskip{4pt}
+\setlength\belowcaptionskip{0pt}
+
+% The hints, and the example rows of the table, in grey italic.
+\newif\ifhints
+\hintsfalse   % hints are hidden
+\usepackage{comment}
+\ifhints
+  \newenvironment{hint}{\par\color{gray}\itshape\setlist{nosep,leftmargin=1.5em}}{\par}
+  \newcommand\examplerow[3]{{\color{gray}\itshape #1} & {\color{gray}\itshape #2} & {\color{gray}\itshape #3} \\}
+\else
+  \excludecomment{hint}
+  \newcommand\examplerow[3]{}
+\fi
+
+% ---------------------------------------------------------------------------
+\newcommand\TODO[1]{\textcolor{red}{#1}}
+\newcommand\myname{Leonie Merkl}
+\newcommand\myteam{A Team}
+\newcommand\Imp{Jurcik}     % Improviser
+\newcommand\Mus{Merkl}   % Musicologist
+\newcommand\Pla{Mukherjee}         % Player
+% ---------------------------------------------------------------------------
+
+\newcommand\code[1]{\texttt{#1}}
+% A clickable reference to a section, printed as §1, §2.1, ...
+\newcommand\secref[1]{\hyperref[#1]{\S\ref*{#1}}}
+% A paragraph that starts with a bold lead-in. The bold text marks the new paragraph,
+% so the space between paragraphs (\parskip) is taken back above it.
+\newcommand\lead[1]{\vspace{-\parskip}\textbf{#1}}
+
+\begin{document}
+
+{\Large\bfseries M1 --- Literature survey, agent design and project plan}\par\medskip
+\textbf{Name:} \myname \quad \textbf{Team:} \myteam \quad \textbf{Specialisation:} Musicologist
+(Research)\par\medskip
+
+\section{Literature survey}\label{sec:survey}
+
+% >>> OWN PART: literature survey <<<
+\lead{Retrieval.} Retrieval-augmented generation (RAG) first retrieves passages for the input and then
+generates the answer from them. The model itself does not decide whether or when to retrieve
+\parencite{lewis2020retrieval}. Its dense retriever, DPR, was better than BM25 on all datasets tested except SQuAD
+\parencite{karpukhin2020dense}. At the Reading Desk, only the titles can be searched for free, so retrieval starts from them.
+
+\lead{Agentic reading.} ReAct alternates reasoning and tool calls. Non-informative searches caused 23\% of its
+errors, and it often repeated earlier thoughts and actions \parencite{yao2023react}. Unlike RAG that retrieves
+once or follows a predefined workflow, A-RAG lets the model choose among keyword search, semantic search and
+chunk reading, and it was more accurate than traditional RAG with comparable or fewer retrieved tokens
+\parencite{du2026arag}. DeepRead shows the model the document's headings and lets it choose between searching
+and reading. It mostly searched first and then read \parencite{li2026deepread}. At the Reading Desk, each read is charged in characters as well as tokens.
+
+\lead{Cost and context.} In Wu et al., each piece of evidence has a price and each question a budget to spend on it. No fixed selector
+uniformly dominated, and one model often consumed its budget instead of managing it
+\parencite{wu2026knowledge}. Joren et al.\ found that raising the context limit from 6,000 to 10,000 tokens
+left the share of questions with sufficient context effectively unchanged \parencite{joren2025sufficient}. The Reading Desk sets no budget itself and only counts the cost against the score.
+
+\lead{Evaluation.} Kapoor et al.\ argue that agents should be judged on accuracy and cost together, as a Pareto
+front: on HumanEval, simple baselines matched or beat complex agents at much lower cost
+\parencite{kapoor2024ai}. ALCE tests whether citations jointly support each statement and whether any citation
+is irrelevant \parencite{gao2023enabling}.
+
+In a workflow, models and tools follow predefined code paths, whereas in an agent the model directs its own
+process and tool use \parencite{anthropic2024building}. By this definition, classic RAG is a workflow, while
+A-RAG and DeepRead are agents. The Reading Desk combines agentic reading, a charge per read and a score on the exact supporting set. No source in this survey treats all three together, so the design draws on each strand: term matching, agentic reading, a budget in code and cost-aware evaluation.
+
+\section{Agent design}
+
+\subsection{My agent}\label{sec:agent}
+
+% >>> OWN PART: my agent (four questions), Figures 1 and 2 <<<
+\lead{The problem.} Only \code{browse}, which lists titles and lengths, is free. \code{examine} (abstract and
+section headings) and \code{read} (one section) cost characters, even when repeated. A right answer scores 1, a wrong one or a skip 0. The named volumes score 1 if they are exactly a set that establishes
+the answer. An extra volume takes off a share, and a missing one gives 0. Extra reading and tokens also count,
+with weights published before M2 \parencite{course-api}. If the weights allow, no question
+will be skipped, and one volume too many will be named rather than one too few.
+
+\lead{Approach.} The \emph{plain-prompt baseline} gives the model only the rules and the arena's messages. It
+plays alone with the arena's queries, without help from code and with a fixed limit per question
+\parencite{course-s4}. It is the reference point and will be built first. The agent then adds classical
+computation in code: \code{bm25\_search}, \code{find\_in\_toc} and regex. BM25 costs nothing, and term matching
+is sensitive to highly selective keywords \parencite{karpukhin2020dense}, which names, titles of works and
+years are expected to be. Dense retrieval is left out for now because titles are short, but it could be added
+later.
+
+The \emph{agentic approach} (Fig.~\ref{fig:agentic}) is the main design. The titles from \code{browse} are
+in the prompt, and the model chooses every tool in a ReAct loop \parencite{yao2023react}. As in A-RAG, no
+fixed search step comes before its first decision \parencite{du2026arag}. The model can therefore react to
+what it finds: it can open a second volume when one is not enough, or search again when
+BM25 misses a synonym. Because each step costs tokens, the code guards the loop against the repetition reported for
+ReAct \parencite{yao2023react}. As seen in Wu et al., a model may use up its budget instead of managing it
+\parencite{wu2026knowledge}, so the budget is enforced in code. When the loop stops, the best guess
+is sent instead of a skip \parencite{course-api}.
+
+\begin{figure}[!ht]\centering
+\begin{tikzpicture}[rdfig]
+  \node[box, minimum width=15mm] (q) at (0.2,0) {Question};
+  \node[box, minimum width=27mm] (bm) at (3.1,0) {Prompt: question,\\titles from \code{browse}};
+  \node[lm,  minimum width=34mm] (lm) at (7.4,0) {Model chooses\\the next tool};
+  \node[box, minimum width=27mm] (ans) at (12.6,0) {\code{answer} with\\supporting volumes};
+  \node[box, minimum width=44mm] (tool) at (4.0,-1.7) {Tools: \code{bm25\_search}, \code{find\_in\_toc},\\\code{examine}, \code{read}, regex};
+  \node[box, minimum width=44mm] (grd) at (10.7,-1.7) {Guards: budget, repeated\\action, no progress};
+  \draw[->] (q) -- (bm);
+  \draw[->] (bm) -- (lm);
+  \draw[->] (lm) -- node[lab, above] {answer} (ans);
+  \draw[->] (5.95,0 |- lm.south) -- node[lab, left] {action} (5.95,0 |- tool.north);
+  \draw[->] (tool) -- node[lab, above] {observation} (grd);
+  \draw[->] (8.8,0 |- grd.north) -- node[lab, right] {continue} (8.8,0 |- lm.south);
+  \draw[->] (grd.north -| ans.south) -- node[lab, right] {stop:\\best guess} (ans.south);
+\end{tikzpicture}
+\caption{Agentic approach: the model decides each step; code runs tools and guards the loop.}\label{fig:agentic}
+\end{figure}
+
+The \emph{workflow approach} is the alternative considered. Like classic RAG (\S1), it follows a path set by
+code: it searches the titles, examines the top volumes, reads sections and calls the model only when
+checks in code are unclear. It would spend fewer tokens, but was not chosen because a fixed path cannot
+react when a question needs a second volume or a title uses a synonym.
+
+\lead{How it will be judged.} Correct answers, characters read and tokens will be measured, and the named
+volumes will be checked by citation recall and precision \parencite{gao2023enabling}. Runs will use questions
+kept out of tuning, several seeds and a fixed temperature \parencite{hochlehnert2025sober,course-s3}. The agent
+works if it answers more questions correctly than the baseline within the budget per question. This budget
+starts at about 6,000 tokens \parencite{joren2025sufficient}, estimated here as 24,000 characters. The Pareto
+front of cost and correct answers will then be used to choose between settings \parencite{kapoor2024ai}. If the
+agent falls short, each wrong answer will be traced to its cause: either the right section was never read, or
+it was read and the answer was still wrong. The more frequent cause will be fixed first.
+
+\lead{Where it meets the team.} The Musicologist gets a question and a budget from the Conductor and returns an answer,
+supporting volumes, a confidence and the cost, which the Conductor checks. Its model calls go through the
+shared wrapper. The shared store keeps the Musicologist's questions, the sections it has read and its best answer so
+far. For a new question, the sections already read are searched first, as a repeated read is charged again
+\parencite{course-api}. If the Musicologist fails, the Conductor can send the stored answer instead of a skip. In the Overture, the Musicologist
+rates signs and volumes by BM25 against open questions, without tokens (\secref{sec:ensemble}).
+
+\subsection{The Ensemble}\label{sec:ensemble}
+
+\textbf{Dependencies.} The parts depend on each other in the four ways named by
+\textcite{malone1994interdisciplinary}. There are two \emph{shared resources}: the places on the trolley and
+the one connection to the arena. As \emph{producer and consumer}, the Improviser delivers the volumes that the
+Musicologist can read only in the hall, and a door opened by the Player gives the Improviser a shortcut.
+\emph{Simultaneity} is needed at a door, where a puzzle can be answered only while the trolley stands there
+\parencite{course-api}. Each question is a \emph{task with subtasks}: choosing rooms, fetching, reading and
+answering.
+
+\begin{figure}[!ht]\centering
+\begin{tikzpicture}[font=\footnotesize, >=stealth,
+  box/.style={draw, minimum height=5mm, inner sep=2.5pt, align=center},
+  lab/.style={font=\scriptsize, inner sep=1.5pt, align=center}]
+  % Outside the container, on the left: the arena (the game) and the model endpoint (the language model).
+  % They are two servers: model calls never pass through the arena.
+  \node[box, minimum width=14mm, anchor=east] (arena) at (0.35,0.55) {Arena};
+  \node[box, minimum width=14mm, anchor=east] (llm) at (0.35,-0.55) {Model endpoint};
+  % Inside: the Conductor above, the wrapper and the three specialists below, the store on the right.
+  \node[box, minimum width=87mm] (con) at (6.1,0.55) {\textbf{Conductor}: loop, routing rule, checks, log};
+  \node[box, minimum width=22mm] (wrap) at (2.85,-0.55) {Model wrapper};
+  \node[box, minimum width=17mm] (imp) at (5.85,-0.55) {Improviser};
+  \node[box, minimum width=20mm] (mus) at (7.85,-0.55) {Musicologist};
+  \node[box, minimum width=14mm] (pla) at (9.7,-0.55) {Player};
+  \node[draw, densely dotted, fit=(imp)(mus)(pla), inner sep=2pt] (specs) {};
+  \node[box, minimum width=20mm, minimum height=16mm] (store) at (12.45,0) {Shared\\store};
+  \node[lab] at (4.2,0) {decision $\downarrow$ proposal $\uparrow$};
+  \node[draw, dashed, fit=(con)(wrap)(specs)(store), inner sep=3pt] (box) {};
+  \draw[<->] (arena) -- node[lab, below=1pt, pos=0.4] {one\\connection} (con);
+  \foreach \n in {imp,mus,pla} \draw[<->] (\n.north) -- (\n.north |- con.south);
+  % Every specialist may call the wrapper, and only the wrapper calls the model.
+  \draw[->] (specs.west) -- node[lab, below] {call} (wrap.east);
+  \draw[->] (wrap) -- (llm);
+  % The Conductor and every specialist read and write the store.
+  \draw[<->] (con.east) -- (con.east -| store.west);
+  \draw[<->] (specs.east) -- (specs.east -| store.west);
+\end{tikzpicture}
+\caption{The container (dashed) with its three specialists (dotted). The Conductor and the specialists use
+the shared store. Only the specialists call the model, through the wrapper.}\label{fig:ensemble}
+\end{figure}
+
+\lead{Coordination.} The Ensemble is organised as a hierarchy \parencite{course-s2}. At the top is the Conductor, written in plain code. It holds the connection, runs the loop, checks every action and
+hands each decision to one specialist (Fig.~\ref{fig:ensemble}). It also keeps the shared store: the setlist texts, sent only once, the map, the texts read and the costs. In a base quest, the first message names the quest and so the specialist. In the Overture the order of work is open, so a fixed rule settles where the trolley
+goes next: the Musicologist rates each candidate sign or volume, the Improviser gives its distance, and the
+Conductor takes the candidate with the most worth per distance.
+
+The alternative considered was a blackboard \parencite{erman1980hearsay}, on which a control component selects which part writes next \parencite{course-s2}. Its authors noted that such control \enquote{takes time and requires many fairly sophisticated mechanisms} and is justified where no explicit algorithm exists \parencite[246]{erman1980hearsay}. Here a simple rule chooses the next step without using tokens, so only the shared store was taken over.
+
+\lead{When a part fails, is slow or is wrong.} If a specialist fails, the Conductor falls back on a default without tokens. For a question, it sends the best answer so far, which the Musicologist keeps up to date in the shared store. A puzzle is skipped, and on the map the nearest exit is taken.
+ A slow model call is stopped before the endpoint's 300-second cut-off \parencite{course-s4} and retried once, so a turn stays below the ten minutes of silence that end a run \parencite{course-api}. Against wrong answers, every proposal is first checked in code, as language models were found no better at verifying solutions than at producing them \parencite{kambhampati2024position}. A failed proposal is returned once with the reason. If it fails again, the last well-formed one is sent, as a wrong answer costs no more than a skip \parencite{course-api}, except on claims, which a team of three does not get.
+
+\lead{Logging.} The starter code logs every arena message and model call \parencite{course-s4}. For each action, the log will add the deciding part, its reason, its tokens, the change in \code{spent} and the check result.
+
+\section{Project plan}
+
+\subsection{The team's plan}
+
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.14\linewidth}>{\raggedright\arraybackslash}p{0.62\linewidth}>{\raggedright\arraybackslash}p{0.18\linewidth}@{}}
+\hline
+\textbf{By} & \textbf{What will be working} & \textbf{Who} \\
+\hline
+16 Nov & Self-test passes, and fails when the prompt is broken & All \\
+20 Nov & Conductor shares: loop and routing (\Imp), shared store (\Mus), logging and failure rules (\Pla) & one each \\
+23 Nov & Each base quest plays a practice run via the Conductor & each owner \\
+27 Nov & \textbf{First Overture run with all parts in one container} & All \\
+30 Nov week & Rehearsal: image connects to course arena and endpoint & \Imp \\
+4 Dec & Overture end to end with failure rules, baselines measured & \Pla \\
+8 Dec & Image frozen, all dependencies inside, reflections drafted & \Mus \\
+10 Dec & M2 handed in & each \\
+\hline
+\end{tabular}
+
+Each member owns one Conductor share. Open rows are checked weekly and work is moved.
+
+\subsection{My plan}
+
+% >>> OWN PART: my plan <<<
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.14\linewidth}>{\raggedright\arraybackslash}p{0.83\linewidth}@{}}
+\hline
+\textbf{By} & \textbf{What will be working} \\
+\hline
+20 Nov & Shared store with the best-answer field, baseline runs \\
+23 Nov & Tools, practice run via the Conductor \\
+27 Nov & Agentic approach with guards, ratings of signs and volumes \\
+1 Dec & Measuring script, comparison with the baseline on held-out questions \\
+7 Dec & Tuning along the Pareto front, settings fixed \\
+\hline
+\end{tabular}
+
+Tuning is the step most likely to slip, and it would then shrink to a small grid search.
+
+\section*{References}
+
+{\sloppy\printbibliography[heading=none]}
+
+\subsection*{Use of AI}
+% >>> OWN PART: AI note <<<
+Claude Opus 5.5 and Claude Fable 5.2 (Anthropic) were used to summarise papers, to work out the design in conversation, to draft and edit the
+text and to produce the process diagram. The papers were read by the author, and every source, quotation and
+number cited from them was checked against the original. The design choices are the author's own, and the
+final text and figure were checked against the author's notes and the API reference.
+
+\end{document}
