@@ -184,7 +184,8 @@ Conductor takes the candidate with the most worth per distance.
 
 The alternative considered was a blackboard \parencite{erman1980hearsay}, on which a control component selects which part writes next \parencite{course-s2}. Its authors noted that such control \enquote{takes time and requires many fairly sophisticated mechanisms} and is justified where no explicit algorithm exists \parencite[246]{erman1980hearsay}. Here a simple rule chooses the next step without using tokens, so only the shared store was taken over.
 
-\lead{When a part fails, is slow or is wrong.} If a specialist fails, the Conductor falls back on a default without tokens: the nearest exit or a skip. A slow model call is stopped before the endpoint's 300-second cut-off \parencite{course-s4} and retried once, so a turn stays below the ten minutes of silence that end a run \parencite{course-api}. Against wrong answers, every proposal is first checked in code, as language models were found no better at verifying solutions than at producing them \parencite{kambhampati2024position}. A failed proposal is returned once with the reason. If it fails again, the last well-formed one is sent, as a wrong answer costs no more than a skip \parencite{course-api}, except on claims, which a team of three does not get.
+\lead{When a part fails, is slow or is wrong.} If a specialist fails, the Conductor falls back on a default without tokens. For a question, it sends the best answer so far, which the Musicologist keeps up to date in the shared store. A puzzle is skipped, and on the map the nearest exit is taken.
+ A slow model call is stopped before the endpoint's 300-second cut-off \parencite{course-s4} and retried once, so a turn stays below the ten minutes of silence that end a run \parencite{course-api}. Against wrong answers, every proposal is first checked in code, as language models were found no better at verifying solutions than at producing them \parencite{kambhampati2024position}. A failed proposal is returned once with the reason. If it fails again, the last well-formed one is sent, as a wrong answer costs no more than a skip \parencite{course-api}, except on claims, which a team of three does not get.
 
 \lead{Logging.} The starter code logs every arena message and model call \parencite{course-s4}. For each action, the log will add the deciding part, its reason, its tokens, the change in \code{spent} and the check result.
 
@@ -196,13 +197,13 @@ The alternative considered was a blackboard \parencite{erman1980hearsay}, on whi
 \hline
 \textbf{By} & \textbf{What will be working} & \textbf{Who} \\
 \hline
-16 Nov & Self-test passes, and fails when the prompt is broken & \Mus \\
+16 Nov & Self-test passes, and fails when the prompt is broken & All \\
 20 Nov & Conductor shares: loop and routing (\Imp), shared store (\Mus), logging and failure rules (\Pla) & one each \\
 23 Nov & Each base quest plays a practice run via the Conductor & each owner \\
-27 Nov & \textbf{First Overture run with all parts in one container} & \Imp \\
+27 Nov & \textbf{First Overture run with all parts in one container} & All \\
 30 Nov week & Rehearsal: image connects to course arena and endpoint & \Imp \\
 4 Dec & Overture end to end with failure rules, baselines measured & \Pla \\
-8 Dec & Image frozen, all dependencies inside, reflections drafted & \Pla \\
+8 Dec & Image frozen, all dependencies inside, reflections drafted & \Mus \\
 10 Dec & M2 handed in & each \\
 \hline
 \end{tabular}
@@ -223,6 +224,6 @@ will be moved to after M2.
 {\sloppy\printbibliography[heading=none]}
 
 \subsection*{Use of AI}
-TODO
+Claude Opus 5.5 was used for language editing, structural suggestions, and literature search. Every citation was checked against the original source. All content, analysis, and conclusions are the author's own.
 
 \end{document}
