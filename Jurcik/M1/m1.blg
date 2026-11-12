@@ -1,18 +1,18 @@
 [0] Config.pm:329> INFO - This is Biber 2.22
 [0] Config.pm:332> INFO - Logfile is 'm1.blg'
-[106] biber:342> INFO - === Mi Nov 11, 2026, 18:29:20
-[138] Biber.pm:421> INFO - Reading 'm1.bcf'
-[239] Biber.pm:1002> INFO - Found 22 citekeys in bib section 0
-[268] Biber.pm:4487> INFO - Processing section 0
-[292] Biber.pm:4680> INFO - Looking for bibtex file 'references.bib' for section 0
-[299] bibtex.pm:1713> INFO - LaTeX decoding ...
-[579] bibtex.pm:1519> INFO - Found BibTeX data source 'references.bib'
-[850] Biber.pm:4680> INFO - Looking for bibtex file 'course.bib' for section 0
-[850] bibtex.pm:1713> INFO - LaTeX decoding ...
-[854] bibtex.pm:1519> INFO - Found BibTeX data source 'course.bib'
-[907] UCollate.pm:68> INFO - Overriding locale 'en-GB' defaults 'variable = shifted' with 'variable = non-ignorable'
-[907] UCollate.pm:68> INFO - Overriding locale 'en-GB' defaults 'normalization = NFD' with 'normalization = prenormalized'
-[907] Biber.pm:4307> INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'en-GB'
-[907] Biber.pm:4313> INFO - No sort tailoring available for locale 'en-GB'
-[940] bbl.pm:676> INFO - Writing 'm1.bbl' with encoding 'UTF-8'
-[951] bbl.pm:779> INFO - Output to m1.bbl
+[113] biber:342> INFO - === Do Nov 12, 2026, 01:00:32
+[140] Biber.pm:421> INFO - Reading 'm1.bcf'
+[256] Biber.pm:1002> INFO - Found 22 citekeys in bib section 0
+[285] Biber.pm:4487> INFO - Processing section 0
+[309] Biber.pm:4680> INFO - Looking for bibtex file 'references.bib' for section 0
+[316] bibtex.pm:1713> INFO - LaTeX decoding ...
+[593] bibtex.pm:1519> INFO - Found BibTeX data source 'references.bib'
+[824] Biber.pm:4680> INFO - Looking for bibtex file 'course.bib' for section 0
+[825] bibtex.pm:1713> INFO - LaTeX decoding ...
+[829] bibtex.pm:1519> INFO - Found BibTeX data source 'course.bib'
+[901] UCollate.pm:68> INFO - Overriding locale 'en-GB' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[902] UCollate.pm:68> INFO - Overriding locale 'en-GB' defaults 'variable = shifted' with 'variable = non-ignorable'
+[902] Biber.pm:4307> INFO - Sorting list 'none/global//global/global/global' of type 'entry' with template 'none' and locale 'en-GB'
+[902] Biber.pm:4313> INFO - No sort tailoring available for locale 'en-GB'
+[936] bbl.pm:676> INFO - Writing 'm1.bbl' with encoding 'UTF-8'
+[956] bbl.pm:779> INFO - Output to m1.bbl

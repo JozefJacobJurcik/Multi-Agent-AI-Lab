@@ -60,6 +60,9 @@
 \newcommand\code[1]{\texttt{#1}}
 % A clickable reference to a section, printed as §1, §2.1, ...
 \newcommand\secref[1]{\hyperref[#1]{\S\ref*{#1}}}
+% A paragraph that starts with a bold lead-in. The bold text marks the new paragraph,
+% so the space between paragraphs (\parskip) is taken back above it.
+\newcommand\lead[1]{\vspace{-\parskip}\textbf{#1}}
 
 \begin{document}
 
@@ -70,20 +73,21 @@
 \section{Literature survey}\label{sec:survey}
 
 The Night Round combines two classical problems: exploring a graph that is revealed only as it is walked, and
-collecting items with a vehicle of limited capacity. Places not yet seen cannot be planned through, so
-planning and acting have to alternate \parencite{koenig2001agent}.
+collecting items with a vehicle of limited capacity. Planning for every possible layout of unseen places
+takes too long, so planning and acting alternate \parencite{koenig2001agent}.
 
-\textbf{Exploring an unknown graph.} In online graph exploration, every vertex of a weighted graph must be visited, and the edges of a vertex are revealed on arrival \parencite{eberle2022robustification}. Two simple
+\lead{Exploring an unknown graph.} In online graph exploration, every vertex of a weighted graph must be visited, and the edges of a vertex are revealed on arrival \parencite{eberle2022robustification}. Two simple
 rules have known guarantees. The nearest-neighbour rule always walks to the closest unvisited vertex, and its
-tour was shown to be at most $O(\log n)$ times as long as the best one \parencite{rosenkrantz1977analysis}.
+tour was shown to be at most $O(\log n)$ times as long as the best one
+\parencite{eberle2022robustification,rosenkrantz1977analysis}.
 Depth-first search was shown to walk at most twice the number of vertices when all edges are equally long
 \parencite{koenig2003performance}. In simulations, walking to the closest border of the known space (the
 frontier) did not fall behind more elaborate strategies \parencite{holz2010evaluating}. Both guarantees assume that the neighbours of a vertex are seen on arrival. In the Night Round, an untried
 exit shows only its length, not where it leads.
 
-\textbf{Carrying volumes home.} The volumes add a second constraint, as the trolley has to return to the reading hall whenever it is full. Exploring with regular returns to the start was studied as piecemeal exploration \parencite{betke1995piecemeal}. There the limit is on the distance of each trip, and depth-first search with such returns was shown to fail under it. The trolley is limited in load instead, so in the Night Round a return only costs the walk back. Once the map is known, the task is capacitated routing: trips from a depot with a load limit and as little total distance as possible \parencite{haimovich1985bounds}. A simple method for it is the savings heuristic \parencite{clarke1964scheduling}. The combination is known in robotics as foraging, in which robots search for objects and carry them to a collection point \parencite{winfield2009foraging}. No source in this survey treats it for a single agent that keeps a map and is scored on distance.
+\lead{Carrying volumes home.} The volumes add a second constraint, as the trolley has to return to the reading hall whenever it is full. Exploring with regular returns to the start was studied as piecemeal learning \parencite{betke1995piecemeal}. There each trip may walk only a limited distance. Depth-first search that breaks off to return may then be unable to resume, since the only known path back to where it stopped can be longer than one trip allows. The trolley is limited in load instead, so in the Night Round a return only costs the walk back. Once the map is known, the task is capacitated routing: trips from a depot with a load limit and as little total distance as possible \parencite{haimovich1985bounds}. A simple method for it is the savings heuristic \parencite{clarke1964scheduling}. The combination is known in robotics as foraging, in which robots search for objects and carry them to a collection point \parencite{winfield2009foraging}. No source in this survey treats it for a single agent that keeps a map and is scored on distance.
 
-\textbf{Language models.} Used alone, language models were found to plan poorly. GPT-4 solved about 12\% of planning tasks on average \parencite{valmeekam2023planning} and performed poorly at mapping
+\lead{Language models.} Used alone, language models were found to plan poorly. GPT-4 solved about 12\% of planning tasks on average \parencite{valmeekam2023planning} and performed poorly at mapping
 and navigation in text-game mazes \parencite{ding2024mango}. Other work keeps a classical method in
 control: the model proposes and an external verifier checks \parencite{kambhampati2024position}, or the model
 only guides which frontier a planner tries next \parencite{shah2023navigation}. As the Night Round also scores
@@ -98,7 +102,7 @@ it is as weak.
 
 \textbf{The problem.} The first message gives the number of volumes (\code{total}), the capacity of the trolley and the exits of the hall with their lengths. On arrival, a place shows its id, kind (room or junction), volumes, exits with their lengths and the exit that leads back \parencite{course-s4}. The agent is never shown where an untried exit leads or where the volumes are. The environment is thus partially observable \parencite{russell2021artificial,course-s1}. Within a run it is deterministic and static, so a stored map stays valid. The score counts volumes delivered, distance walked and tokens used, but not steps \parencite{course-api}, so loading costs nothing. As \code{total} is known, exploring can stop once all volumes have been seen.
 
-\textbf{Approach.} The agent is deliberative \parencite{course-s1}: it keeps a map and plans on it in code, with shortest
+\lead{Approach.} The agent is deliberative \parencite{course-s1}: it keeps a map and plans on it in code, with shortest
 paths from NetworkX \parencite{hagberg2008exploring}. Until all volumes are seen, the first of rules 1 to 3 that
 applies is used.
 \begin{enumerate}[nosep,leftmargin=1.6em]
@@ -124,9 +128,9 @@ logged. A language model as the driver was ruled out by the findings of \secref{
 cost. It is kept only as a fallback for when the arena refuses the actions of the agent, and its proposal is
 sent only if the code confirms it \parencite{kambhampati2024position}.
 
-\textbf{Evaluation.} A depth-first walker without a routing phase will be built first, as the simplest version and the alternative. The plain-prompt baseline \parencite{course-s4}, which gives the model the rules and the messages so far, will be run over several seeds, reported as mean and standard deviation \parencite{hochlehnert2025sober}. All variants will be run on the same practice instances, some kept out of tuning. The design counts as working if every volume is delivered on every practice instance and the mean distance on the instances kept out of tuning is below that of the depth-first walker. If depth-first search walks less, it will be kept instead. The log will split the distance into exploring and carrying. If the agent falls short, the larger share is addressed first: rule~3 for exploring, rule~2 for carrying.
+\lead{Evaluation.} A depth-first walker without a routing phase will be built first, as the simplest version and the alternative. The plain-prompt baseline \parencite{course-s4}, which gives the model the rules and the messages so far, will be run over several seeds, reported as mean and standard deviation \parencite{hochlehnert2025sober}. All variants will be run on the same practice instances, some kept out of tuning. The design counts as working if every volume is delivered on every practice instance and the mean distance on the instances kept out of tuning is below that of the depth-first walker. If depth-first search walks less, it will be kept instead. The log will split the distance into exploring and carrying. If the agent falls short, the larger share is addressed first: rule~3 for exploring, rule~2 for carrying.
 
-\textbf{Where it meets the team.} In the Overture, the Improviser is a service that the Conductor calls with a
+\lead{Where it meets the team.} In the Overture, the Improviser is a service that the Conductor calls with a
 goal, such as fetching certain volumes or exploring towards a sign, and that returns the next action. Its map
 is kept in the shared store (\secref{sec:ensemble}). It needs to know which volumes are worth a place on the
 trolley (Musicologist) and which doors are open (Player). In return it reports the distance of a trip, to be
@@ -173,16 +177,16 @@ answering.
 the shared store. Only the specialists call the model, through the wrapper.}\label{fig:ensemble}
 \end{figure}
 
-\textbf{Coordination.} The Ensemble is organised as a hierarchy \parencite{course-s2}. At the top is the Conductor, written in plain code. It holds the connection, runs the loop, checks every action and
+\lead{Coordination.} The Ensemble is organised as a hierarchy \parencite{course-s2}. At the top is the Conductor, written in plain code. It holds the connection, runs the loop, checks every action and
 hands each decision to one specialist (Fig.~\ref{fig:ensemble}). It also keeps the shared store: the setlist texts, sent only once, the map, the texts read and the costs. In a base quest, the first message names the quest and so the specialist. In the Overture the order of work is open, so a fixed rule settles where the trolley
 goes next: the Musicologist rates each candidate sign or volume, the Improviser gives its distance, and the
 Conductor takes the candidate with the most worth per distance.
 
-The alternative considered was a blackboard \parencite{erman1980hearsay}, on which a control component selects which part writes next \parencite{course-s2}. Its authors noted that such control \enquote{takes time and requires many fairly sophisticated mechanisms} and is justified where no explicit algorithm exists \parencite{erman1980hearsay}. Here a simple rule chooses the next step without using tokens, so only the shared store was taken over.
+The alternative considered was a blackboard \parencite{erman1980hearsay}, on which a control component selects which part writes next \parencite{course-s2}. Its authors noted that such control \enquote{takes time and requires many fairly sophisticated mechanisms} and is justified where no explicit algorithm exists \parencite[246]{erman1980hearsay}. Here a simple rule chooses the next step without using tokens, so only the shared store was taken over.
 
-\textbf{When a part fails, is slow or is wrong.} If a specialist fails, the Conductor falls back on a default without tokens: the nearest exit or a skip. A slow model call is stopped before the endpoint's 300-second cut-off \parencite{course-s4} and retried once, so a turn stays below the ten minutes of silence that end a run \parencite{course-api}. Against wrong answers, every proposal is first checked in code, as language models were found no better at verifying solutions than at producing them \parencite{kambhampati2024position}. A failed proposal is returned once with the reason. If it fails again, the last well-formed one is sent, as a wrong answer costs no more than a skip \parencite{course-api}, except on claims, which a team of three does not get.
+\lead{When a part fails, is slow or is wrong.} If a specialist fails, the Conductor falls back on a default without tokens: the nearest exit or a skip. A slow model call is stopped before the endpoint's 300-second cut-off \parencite{course-s4} and retried once, so a turn stays below the ten minutes of silence that end a run \parencite{course-api}. Against wrong answers, every proposal is first checked in code, as language models were found no better at verifying solutions than at producing them \parencite{kambhampati2024position}. A failed proposal is returned once with the reason. If it fails again, the last well-formed one is sent, as a wrong answer costs no more than a skip \parencite{course-api}, except on claims, which a team of three does not get.
 
-\textbf{Logging.} The starter code logs every arena message and model call \parencite{course-s4}. For each action, the log will add the deciding part, its reason, its tokens, the change in \code{spent} and the check result.
+\lead{Logging.} The starter code logs every arena message and model call \parencite{course-s4}. For each action, the log will add the deciding part, its reason, its tokens, the change in \code{spent} and the check result.
 
 \section{Project plan}
 

@@ -210,7 +210,7 @@
            giveni={S\bibinitperiod}}}%
       }
       \list{location}{1}{%
-        {Munich}%
+        {Berlin}%
       }
       \list{publisher}{1}{%
         {{VDE} Verlag}%
@@ -575,7 +575,7 @@
       \field{booktitle}{Proceedings of the 41st International Conference on Machine Learning}
       \field{eprinttype}{arXiv}
       \field{series}{Proceedings of Machine Learning Research}
-      \field{title}{Position: {LLMs} Can't Plan, But Can Help Planning in {LLM}-Modulo Frameworks}
+      \field{title}{Position: {LLMs} Can't Plan, But Can Help Planning in {LLM-Modulo} Frameworks}
       \field{volume}{235}
       \field{year}{2024}
       \field{pages}{22895\bibrangedash 22907}
@@ -700,7 +700,7 @@
       \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{edition}{4th, Global}
+      \field{edition}{4th ed., global ed.}
       \field{title}{Artificial Intelligence: A Modern Approach}
       \field{year}{2021}
       \verb{urlraw}
@@ -740,11 +740,9 @@
     \endentry
     \entry{course-api}{misc}{}{}
       \name{author}{1}{}{%
-        {{hash=ebea62cf6285eb4f9990cb6f2bede052}{%
-           family={Schaumeier},
-           familyi={S\bibinitperiod},
-           given={Julia},
-           giveni={J\bibinitperiod}}}%
+        {{hash=f7d34857875a4513347f565a921ee935}{%
+           family={{IN2106 Multi-Agent AI Lab}},
+           familyi={I\bibinitperiod}}}%
       }
       \name{shortauthor}{1}{}{%
         {{hash=e5a8953b62b81892ac69a5af58f605d5}{%
@@ -752,13 +750,13 @@
            familyi={I\bibinitperiod}}}%
       }
       \strng{namehash}{e5a8953b62b81892ac69a5af58f605d5}
-      \strng{fullhash}{ebea62cf6285eb4f9990cb6f2bede052}
-      \strng{fullhashraw}{ebea62cf6285eb4f9990cb6f2bede052}
+      \strng{fullhash}{f7d34857875a4513347f565a921ee935}
+      \strng{fullhashraw}{f7d34857875a4513347f565a921ee935}
       \strng{bibnamehash}{e5a8953b62b81892ac69a5af58f605d5}
-      \strng{authorbibnamehash}{ebea62cf6285eb4f9990cb6f2bede052}
-      \strng{authornamehash}{ebea62cf6285eb4f9990cb6f2bede052}
-      \strng{authorfullhash}{ebea62cf6285eb4f9990cb6f2bede052}
-      \strng{authorfullhashraw}{ebea62cf6285eb4f9990cb6f2bede052}
+      \strng{authorbibnamehash}{f7d34857875a4513347f565a921ee935}
+      \strng{authornamehash}{f7d34857875a4513347f565a921ee935}
+      \strng{authorfullhash}{f7d34857875a4513347f565a921ee935}
+      \strng{authorfullhashraw}{f7d34857875a4513347f565a921ee935}
       \strng{shortauthorbibnamehash}{e5a8953b62b81892ac69a5af58f605d5}
       \strng{shortauthornamehash}{e5a8953b62b81892ac69a5af58f605d5}
       \strng{shortauthorfullhash}{e5a8953b62b81892ac69a5af58f605d5}
@@ -834,7 +832,7 @@
       \verb 10.25080/TCWV9851
       \endverb
     \endentry
-    \entry{hochlehnert2025sober}{misc}{}{}
+    \entry{hochlehnert2025sober}{inproceedings}{}{}
       \name{author}{6}{}{%
         {{hash=27e7f1db17878e2f5074d405fc973835}{%
            family={Hochlehnert},
@@ -879,6 +877,7 @@
       \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
+      \field{booktitle}{Second Conference on Language Modeling ({COLM} 2025)}
       \field{eprinttype}{arXiv}
       \field{title}{A Sober Look at Progress in Language Model Reasoning: Pitfalls and Paths to Reproducibility}
       \field{year}{2025}
