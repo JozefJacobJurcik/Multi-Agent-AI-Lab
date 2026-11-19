@@ -1,0 +1,7 @@
+# Kept out of the image: your key, your local Python, the run records and the arena's image file.
+.env
+.venv/
+traces/
+**/__pycache__
+*.tar.gz
+.git/

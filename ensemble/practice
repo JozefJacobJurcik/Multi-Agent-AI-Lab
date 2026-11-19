@@ -1,0 +1,15 @@
+#!/bin/sh
+# Start one practice run and play it:   ./practice V --claims 10
+# The first word is the quest: selftest, G, N, R, V or O. The rest are the arena's ticket options;
+# ./practice --help lists them.
+set -e
+if [ $# -lt 1 ] || [ "$1" = "--help" ]; then
+    docker compose run --rm --no-deps --entrypoint archive-arena arena practice --help
+    exit 0
+fi
+quest=$1
+shift
+docker compose up --detach --wait arena
+ticket=$(docker compose exec -T arena archive-arena practice --quest "$quest" "$@")
+# --no-deps: the arena is already up, and restarting it would lose the ticket
+docker compose run --rm --build --no-deps -e ARCHIVE_TICKET="$ticket" team

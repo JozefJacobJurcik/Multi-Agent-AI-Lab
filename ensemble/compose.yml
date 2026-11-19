@@ -1,0 +1,23 @@
+# The arena and the team's container on one network. Start a run with ./practice.
+# The arena image is loaded from its file, never built here: docker load -i archive-arena-….tar.gz
+services:
+  arena:
+    image: archive-arena
+    pull_policy: never         # it is on no registry
+    environment:
+      TZ: Europe/Berlin        # times in traces and logs; containers keep UTC otherwise
+    ports:
+      - "8765:8765"            # also reachable from code run outside Docker, at ws://localhost:8765
+    volumes:
+      - ./traces:/data/traces  # every run's trace, one JSON object per line
+
+  team:
+    build: .
+    env_file: .env             # the three ARCHIVE_LLM_ settings; see .env.example
+    environment:
+      ARCHIVE_ARENA_URL: ws://arena:8765
+      TZ: Europe/Berlin
+    volumes:
+      - ./traces:/app/traces   # the team's log of every run, beside the arena's trace
+    depends_on:
+      - arena
