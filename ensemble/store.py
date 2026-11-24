@@ -23,6 +23,7 @@ class SharedStore:
     def __init__(self) -> None:
         self.quest: dict | None = None
         self.observation: dict | None = None
+        self.last_action: dict | None = None
         self.spent: dict | None = None
         self._items: dict[str, dict] = {}
         self._results: dict[str, str] = {}
@@ -40,6 +41,7 @@ class SharedStore:
             return
 
         self.observation = message
+        self.last_action = sent
         if "quest" in message:
             self.quest = message["quest"]
         for item in message.get("setlist", []):
@@ -57,6 +59,18 @@ class SharedStore:
 
     def text(self, volume: str, section: int | None) -> object:
         return self._texts.get((volume, section))
+
+    def volume_text(self, volume: str) -> str:
+        """The volume's title and abstract if examined, and every section read, as one text."""
+        parts = []
+        for (kept, section), text in self._texts.items():
+            if kept != volume:
+                continue
+            if section is None:  # an examine: the whole reply
+                parts += [text.get("title", ""), text.get("abstract", "")]
+            else:
+                parts.append(text)
+        return "\n".join(parts)
 
     def propose(self, item: str, proposal: Proposal) -> None:
         self._proposals.setdefault(item, []).append(proposal)
