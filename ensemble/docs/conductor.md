@@ -27,7 +27,7 @@ Conductor(arena, improviser=Improviser(), musicologist=Musicologist(), player=Pl
 
 - `item` is the setlist entry in full, with its `text`.
 - Never use the arena yourself. `query("read", volume="v-4326", section=3)` sends a query, files the reply in the store and returns it. Look in the store first: every `examine` and `read` is charged again.
-- `feedback` is `None` on the first ask. If what you return fails a check, you are asked once more, with the reason.
+- `feedback` is `None` on the first ask. If what you return fails a check, you are asked once more, with the reason. In the Night Round the Improviser is also asked once after the arena refuses its action, with the arena's reason (`the arena refused the last action: no_exit`).
 - Return `None` when you have nothing to offer. If your method raises, its traceback goes into the team log and the Conductor falls back.
 - `store.last_action` is the action actually sent last: after a default, the Conductor's, not yours.
 - During long work, file your best answer so far with `store.propose(item["id"], proposal)`. If you then fail, the Conductor sends it.
@@ -41,7 +41,8 @@ Conductor(arena, improviser=Improviser(), musicologist=Musicologist(), player=Pl
 | an answer to a question has more than twelve words, no supporting volume, a supporting volume nothing was read of, or a part (split at `", "`) that is not in the supporting volumes' text (`checks.doubt`) | asks once more, with the reason |
 | the second proposal fails too, or the specialist returns `None`, raises or is missing | sends the last proposal in the store if it is well-formed, else skips |
 | the Improviser's second action fails too, or it returns `None`, raises or is missing | walks the nearest exit; after three of these in a row, ends the run |
-| the arena refuses an action that passed the checks | does not try it again: skips that item, or walks the nearest exit |
+| the arena refuses an answer that passed the checks | does not try it again: skips that item |
+| the arena refuses the Improviser's action | asks it once more, with the arena's reason; if the arena refuses that action too, walks the nearest exit |
 
 The Conductor checks only a grid's form; the Player checks it against the puzzle's rule. A model call is stopped after 240 seconds and retried once (`llm/`), so one call stays below the arena's ten minutes of silence. In graded runs each model call counts as hearing from the team; in practice runs only messages to the arena do, so a turn with several calls may need `--silence` (README §2).
 

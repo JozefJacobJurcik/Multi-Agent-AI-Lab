@@ -12,6 +12,8 @@ Shared terms and decisions for the team's code. Use these names in code and in t
 - **Feedback**: why a proposal or action failed the Conductor's check. The specialist gets it back once.
 - **Decision log**: one line per action in the team log: the deciding part, why, its tokens and its change in `spent`.
 - **Shared store**: memory for one run, used by the Conductor and all specialists.
+- **Map**: the places, exits, corridors and shelves the trolley has seen, kept in the shared store.
+- **Plan**: the Improviser's stops for the remaining trips, made once every volume has been seen or no exit is left to try, and made again if it runs out with volumes still on a shelf.
 - **Action / query**: actions (`walk`, `take`, `answer`, `skip`, `end`) change the run. Queries (`browse`, `examine`, `read`) take no turn, but every `examine` and `read` is charged, even a repeated one.
 - **Wrapper**: `llm.chat`, the only place the model is called.
 
@@ -22,9 +24,9 @@ Shared terms and decisions for the team's code. Use these names in code and in t
 3. Arena replies are stored complete and unchanged. The store keeps no history of all messages; that is in the team log in `traces/`.
 4. The Musicologist looks in the shared store before it queries the arena, and queries only for text that is not there yet.
 5. The budget per question is tracked by the Musicologist, not by the store.
-6. The map lives in the shared store, as M1 says. Jozef builds it on top of the store once the store's interface is settled. Leonie's view: the signs and room topics the Musicologist needs arrive in every observation anyway, so the map could also be the Improviser's own module if that is simpler for Jozef.
+6. The map lives in the shared store, as M1 says: `store.map` (`archive_map.py`). `observe` files every place the trolley reaches and every corridor it walks, the Conductor's default walks included.
 7. Specialists never use the arena. They return a proposal or an action, and they query through `Conductor.query`.
-8. Every action is checked in code before it is sent (`checks.py`). What fails goes back once, with the reason. Then the Conductor sends the last proposal in the store if it is well-formed, else a default that uses no tokens: a skip, or the nearest exit. Three nearest-exit defaults in a row end a Night Round.
+8. Every action is checked in code before it is sent (`checks.py`). What fails goes back once, with the reason. Then the Conductor sends the last proposal in the store if it is well-formed, else a default that uses no tokens: a skip, or the nearest exit. Three nearest-exit defaults in a row end a Night Round. In the Night Round an action the arena refuses also goes back to the Improviser once, with the arena's reason; if the arena refuses its next action as well, the Conductor walks the nearest exit.
 9. The Conductor files every well-formed proposal it gets. Specialists file their best answer so far themselves.
 10. The Conductor plays the base quests. The Overture follows once the Improviser's distances and the Musicologist's ratings exist.
 

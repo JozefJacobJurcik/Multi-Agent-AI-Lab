@@ -4,8 +4,9 @@ It holds the one arena connection, runs the loop and hands each decision to one 
 Improviser moves the trolley, the Musicologist answers questions, the Player solves puzzles. Every
 action is checked in code before it is sent (checks.py). What fails goes back once, with the reason;
 then the Conductor sends the last proposal in the store if it is well-formed, else a default that
-uses no tokens: a skip, or the nearest exit. Each action is logged with who decided it, why, its
-tokens and its change in spent. Interface: docs/conductor.md.
+uses no tokens: a skip, or the nearest exit. In the Night Round an action the arena refuses goes
+back to the Improviser once as well. Each action is logged with who decided it, why, its tokens and
+its change in spent. Interface: docs/conductor.md.
 """
 
 from __future__ import annotations
@@ -43,6 +44,7 @@ class Conductor:
         self.improviser = improviser
         self.answerers = {"question": musicologist, "gate": player}  # a team of three gets no claims
         self.default_walks = 0
+        self.retried = False  # the last action was the Improviser's second try after an arena refusal
 
     def play(self) -> dict:
         """Play the run to its end and return the arena's last message."""
@@ -101,19 +103,26 @@ class Conductor:
         return Decision(skip_action(item_id), "Conductor", feedback or "no proposal")
 
     def _move(self) -> Decision:
-        """The Improviser's checked action, else the nearest exit, else the end (DEFAULT_WALKS)."""
-        feedback = None
-        if self._was_refused():
-            feedback = "the arena refused the last action"
-        else:
-            for _ in range(ASKS):
-                action = self._ask(self.improviser, "next_action", self.store, feedback)
-                if action is None:
-                    break
-                feedback = refusal(action, self.store)
-                if feedback is None:
-                    self.default_walks = 0
-                    return Decision(action, "Improviser", "passed the checks")
+        """The Improviser's checked action, else the nearest exit, else the end (DEFAULT_WALKS).
+
+        After the arena refuses an action, the Improviser is asked once, with the arena's reason. If
+        the arena refuses the action it gives then as well, the Conductor walks the nearest exit.
+        """
+        refused = self._was_refused()
+        feedback, asks = None, ASKS
+        if refused:
+            code = self.store.observation["outcome"]["invalid"].get("code")
+            feedback = f"the arena refused the last action: {code}"
+            asks = 0 if self.retried else 1
+        self.retried = False
+        for _ in range(asks):
+            action = self._ask(self.improviser, "next_action", self.store, feedback)
+            if action is None:
+                break
+            feedback = refusal(action, self.store)
+            if feedback is None:
+                self.default_walks, self.retried = 0, refused
+                return Decision(action, "Improviser", "passed the checks")
         self.default_walks += 1
         if self.default_walks > DEFAULT_WALKS:
             return Decision({"action": "end"}, "Conductor", "the Improviser keeps failing")

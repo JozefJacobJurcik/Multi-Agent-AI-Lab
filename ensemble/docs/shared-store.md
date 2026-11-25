@@ -8,7 +8,8 @@ Settled in a grilling session on 2026-11-23 (Leonie). Terms as in [CONTEXT.md](.
 |---|---|---|
 | `observe(message, sent)` | Conductor, after every arena message | files what the message carries (see below). `sent` is the action or query that was sent, `None` for the first message |
 | `quest` | Conductor | the first message's `quest` (id, goal, `total` in the Night Round). The Conductor routes by it |
-| `last_action` | Improviser (its map), Conductor | the action sent before the latest observation, `None` at the start. After a default it is the Conductor's action, not the specialist's |
+| `last_action` | Conductor, Improviser (its plain-prompt baseline) | the action sent before the latest observation, `None` at the start. After a default it is the Conductor's action, not the specialist's |
+| `map` | Improviser | the map of the archive as far as the trolley has seen it (`archive_map.py`): the places and their exits, the corridors walked, the volumes on each room's shelves, shortest paths |
 | `item(id)` | everyone | the item in full, with its text, which the arena sends only once |
 | `open_items()` | Conductor | the ids of the items without a result yet |
 | `text(volume, section)` | Musicologist | for a `read` the section's text, for an `examine` (`section=None`) the whole reply unchanged; `None` if not read yet |
@@ -25,6 +26,7 @@ Settled in a grilling session on 2026-11-23 (Leonie). Terms as in [CONTEXT.md](.
 | `spent` | the latest `spent` |
 | `outcome.answer` | the item's result (`correct`, `incorrect`, `skipped`) |
 | any observation | it replaces the latest observation, and `sent` replaces `last_action` |
+| `trolley` | the place in the map; after a walk, the corridor both ways, as the exit arrived by leads back |
 | `sent` is a `read` and the reply has `reply` | the text under `(volume, section)` |
 | `sent` is an `examine` and the reply has `reply` | the reply under `(volume, None)` |
 | a reply with `error` | nothing but `spent` |

@@ -21,6 +21,7 @@ import sys
 import selftest
 from arena_client import connect
 from conductor import Conductor
+from improviser import Improviser
 
 
 def main() -> int:
@@ -36,7 +37,7 @@ def main() -> int:
         print(f"The run is over: {arena.observation.get('reason')}")
         return 0 if passed else 1
     if quest in ("N", "R", "G"):
-        last = Conductor(arena).play()
+        last = Conductor(arena, improviser=Improviser()).play()
         print(f"The run is over: {last.get('reason')}")
         return 0
 

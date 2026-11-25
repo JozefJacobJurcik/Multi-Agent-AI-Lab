@@ -1,3 +1,4 @@
 # Every package your code uses; the image installs these and nothing else.
 websockets>=14
 openai>=1.40
+networkx>=3.4

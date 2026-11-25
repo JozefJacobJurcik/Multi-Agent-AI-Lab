@@ -168,28 +168,42 @@ def test_night_round_walks_the_nearest_exit_then_ends():
     assert improviser.feedback[:2] == [None, "no_exit: the exits here are [1, 2]"]
 
 
-def test_action_the_arena_refuses_is_followed_by_the_nearest_exit(caplog):
-    class Improviser:
-        def __init__(self) -> None:
-            self.actions = [{"action": "walk", "exit": 1}, {"action": "end"}]
-            self.seen: list[dict | None] = []
+REFUSED = at(HALL["trolley"]["position"], outcome={"invalid": {"code": "no_exit"}})
 
-        def next_action(self, store, feedback):
-            self.seen.append(store.last_action)
-            return self.actions.pop(0)
 
-    caplog.set_level(logging.INFO, logger="conductor")
-    refused = at(HALL["trolley"]["position"], outcome={"invalid": {"code": "no_exit"}})
-    improviser = Improviser()
-    arena = FakeArena(HALL, refused, JUNCTION, ENDED)
+class Walker:
+    """An Improviser that always walks exit 1, and keeps what it was told at each ask."""
+
+    def __init__(self) -> None:
+        self.feedback: list[str | None] = []
+        self.seen: list[dict | None] = []  # store.last_action
+
+    def next_action(self, store, feedback):
+        self.feedback.append(feedback)
+        self.seen.append(store.last_action)
+        return {"action": "walk", "exit": 1}
+
+
+def test_after_the_arena_refuses_an_action_the_improviser_is_asked_once_with_the_reason():
+    improviser = Walker()
+    arena = FakeArena(HALL, REFUSED, JUNCTION, ENDED)
     Conductor(arena, improviser=improviser).play()
-    assert arena.sent == [{"action": "walk", "exit": 1}, {"action": "walk", "exit": 2},
-                          {"action": "end"}]
-    # Not asked after the refusal, and then shown the walk the Conductor chose in its place.
-    assert improviser.seen == [None, {"action": "walk", "exit": 2}]
+    assert arena.sent == [{"action": "walk", "exit": 1}] * 3
+    assert improviser.feedback == [None, "the arena refused the last action: no_exit", None]
+
+
+def test_a_second_refusal_in_a_row_gets_the_nearest_exit(caplog):
+    caplog.set_level(logging.INFO, logger="conductor")
+    improviser = Walker()
+    arena = FakeArena(HALL, REFUSED, REFUSED, JUNCTION, ENDED)
+    Conductor(arena, improviser=improviser).play()
+    assert arena.sent == [{"action": "walk", "exit": 1}, {"action": "walk", "exit": 1},
+                          {"action": "walk", "exit": 2}, {"action": "walk", "exit": 1}]
+    assert improviser.feedback == [None, "the arena refused the last action: no_exit", None]
     whys = [json.loads(message.removeprefix("decision "))["why"] for message in caplog.messages]
-    assert whys == ["passed the checks", "nearest exit: the arena refused the last action",
-                    "passed the checks"]
+    assert whys[2] == "nearest exit: the arena refused the last action: no_exit"
+    # Then shown the walk the Conductor chose in its place.
+    assert improviser.seen[-1] == {"action": "walk", "exit": 2}
 
 
 def test_each_action_is_logged_with_who_decided_and_what_it_cost(caplog):

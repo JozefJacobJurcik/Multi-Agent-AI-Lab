@@ -2,7 +2,8 @@
 instance to the Conductor in main.py; no base class is needed. How it is called: docs/conductor.md.
 
 - feedback is None on the first ask. If what you return fails the Conductor's check, you are asked
-  once more, with the reason as feedback.
+  once more, with the reason as feedback. In the Night Round the Improviser is also asked once after
+  the arena refuses its action, with the arena's reason.
 - Return None when you have nothing to offer. If your method raises, the Conductor logs the
   traceback and falls back on a default that uses no tokens.
 """

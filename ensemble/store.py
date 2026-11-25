@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from archive_map import ArchiveMap
+
 
 @dataclass
 class Proposal:
@@ -25,6 +27,7 @@ class SharedStore:
         self.observation: dict | None = None
         self.last_action: dict | None = None
         self.spent: dict | None = None
+        self.map = ArchiveMap()
         self._items: dict[str, dict] = {}
         self._results: dict[str, str] = {}
         self._texts: dict[tuple[str, int | None], object] = {}
@@ -40,6 +43,7 @@ class SharedStore:
                 self._file_query(message["reply"], sent)
             return
 
+        self.map.observe(message, sent)
         self.observation = message
         self.last_action = sent
         if "quest" in message:
